@@ -1,65 +1,56 @@
-import type {ChangeEvent} from 'react'
-import {useState, useCallback, useEffect} from 'react'
-import {useNavigate} from 'react-router-dom'
-import {get, post} from '../../server'
-import {Restaurant} from '../../data/types'
+import {useEffect, useState, useCallback, ChangeEvent} from 'react'
+import {useNavigate, useParams} from 'react-router-dom'
+import {post, get} from '../../server'
+import {City, District, Trip} from '../../data/types'
 
-type City = {
-  city_name: string
-  short_name: string
-  id: string
-}
-
-type District = {
-  city_name: string
-  si_gu_name: string
-  id: string
-}
-
-const initialFormState: Restaurant = {
+const initialFormState: Trip = {
   _id: '',
   city_id: '',
   city_name: '',
   si_gu_name: '',
-  store_name: '',
+  place_name: '',
+  imgName: '',
   address: '',
   contact: '',
   operating_hours: '',
-  main_menu: '',
+  entrace_fee: '',
   parking_status: '',
-  imgName: '',
+  web_url: '',
   short_info: '',
-  store_info: ''
+  place_info: ''
 }
 
-export default function RestaurantAddPage() {
+export default function TripEditPage() {
   const [citys, setCitys] = useState<City[]>([])
   const [districts, setDistricts] = useState<District[]>([])
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [imageFile, setImageFile] = useState<File | null>(null)
   const [
     {
-      city_id,
+      city_name,
       si_gu_name,
-      store_name,
+      place_name,
+      imgName,
       address,
       contact,
       operating_hours,
-      main_menu,
+      entrace_fee,
       parking_status,
-      imgName,
+      web_url,
       short_info,
-      store_info
+      place_info
     },
     setForm
-  ] = useState<Restaurant>(initialFormState)
+  ] = useState<Trip>(initialFormState)
   const [errorMessage, setErrorMessage] = useState<string>('')
+
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [imageFile, setImageFile] = useState<File | null>(null) // 파일 객체 상태 추가
 
   const storedData = window.localStorage.getItem('admin')
   const parsedData = storedData ? JSON.parse(storedData) : {}
   const author = parsedData.name || ''
   const adminId = parsedData.id || ''
 
+  const {id} = useParams()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -88,10 +79,26 @@ export default function RestaurantAddPage() {
       .catch(e => {
         if (e instanceof Error) setErrorMessage(e.message)
       })
-  }, [])
+
+    if (id) {
+      get(`/trip/info/${id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.ok) {
+            setForm(data.body)
+            setImagePreview(data.body.imgName)
+          } else {
+            setErrorMessage(data.errorMessage)
+          }
+        })
+        .catch(e => {
+          if (e instanceof Error) setErrorMessage(e.message)
+        })
+    }
+  }, [id])
 
   const changed = useCallback(
-    (key: keyof Restaurant) =>
+    (key: keyof Trip) =>
       (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         setForm(obj => ({...obj, [key]: e.target.value}))
         if (key === 'city_id') {
@@ -113,29 +120,30 @@ export default function RestaurantAddPage() {
       }
       reader.readAsDataURL(file)
       setImageFile(file)
-      setForm(prev => ({...prev, imgName: file.name}))
+      setForm(prev => ({...prev, imgURL: file.name}))
     }
   }, [])
 
   const handleRemoveImage = useCallback(() => {
     setImagePreview(null)
-    setImageFile(null)
+    setImageFile(null) // 파일 객체 상태 초기화
     setForm(prev => ({...prev, imgName: ''}))
   }, [])
 
-  const addRestaurant = useCallback(
+  const editTrip = useCallback(
     async (
-      city_id: string,
+      city_name: string,
       si_gu_name: string,
-      store_name: string,
+      place_name: string,
+      imgName: string,
       address: string,
       contact: string,
       operating_hours: string,
-      main_menu: string,
+      entrace_fee: string,
       parking_status: string,
-      imgName: string,
+      web_url: string,
       short_info: string,
-      store_info: string,
+      place_info: string,
       adminId: string,
       author: string
     ) => {
@@ -144,9 +152,9 @@ export default function RestaurantAddPage() {
 
         if (imageFile) {
           const formData = new FormData()
-          formData.append('image', imageFile)
+          formData.append('image', imageFile) // 파일 추가
 
-          const uploadResponse = await post('/restaurant/upload', formData)
+          const uploadResponse = await post('/trip/upload', formData)
           const uploadData = await uploadResponse.json()
           console.log(uploadData)
 
@@ -158,85 +166,88 @@ export default function RestaurantAddPage() {
           }
         }
 
-        const response = await post('/restaurant/add', {
-          city_name: city_id,
+        const response = await post(`/trip/edit/${id}`, {
+          city_name,
           si_gu_name,
-          store_name,
+          place_name,
+          imgName: uploadedImageURL,
           address,
           contact,
           operating_hours,
-          main_menu,
+          entrace_fee,
           parking_status,
-          imgName: uploadedImageURL,
+          web_url,
           short_info,
-          store_info,
+          place_info,
           adminId,
           author
         })
         const data = await response.json()
         if (data.ok) {
           alert('작성이 완료되었습니다.')
-          navigate('/restaurant/list')
+          navigate('/trip/list')
         } else {
-          setErrorMessage(data.errorMessage || '맛집 등록에 실패했습니다.')
+          setErrorMessage(data.errorMessage || '여행지 정보 수정에 실패했습니다.')
         }
       } catch (error) {
-        setErrorMessage('맛집 등록 중 오류가 발생했습니다.')
+        setErrorMessage('여행지 정보 수정 중 오류가 발생했습니다.')
       }
     },
-    [navigate, imageFile]
+    [navigate, imageFile, id]
   )
 
-  const createRestaurant = useCallback(() => {
-    addRestaurant(
-      city_id,
+  const updateTrip = useCallback(() => {
+    editTrip(
+      city_name,
       si_gu_name,
-      store_name,
+      place_name,
+      imgName,
       address,
       contact,
       operating_hours,
-      main_menu,
+      entrace_fee,
       parking_status,
-      imgName,
+      web_url,
       short_info,
-      store_info,
+      place_info,
       adminId,
       author
     )
   }, [
-    city_id,
+    city_name,
     si_gu_name,
-    store_name,
+    place_name,
+    imgName,
     address,
     contact,
     operating_hours,
-    main_menu,
+    entrace_fee,
     parking_status,
-    imgName,
+    web_url,
     short_info,
-    store_info,
+    place_info,
     adminId,
     author,
-    addRestaurant
+    editTrip
   ])
 
   const handleSubmit = useCallback(
     (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault()
-      // Additional validation if needed
-      createRestaurant()
+      updateTrip()
     },
-    [createRestaurant]
+    [updateTrip]
   )
 
-  const filteredDistricts = districts.filter(district => district.city_name === city_id)
+  // 선택한 도시 ID에 따른 시/구 목록 필터링
+  const filteredDistricts = districts.filter(district => district.city_name === city_name)
 
   return (
     <div>
-      <div className="bg-pink-200">
+      <div className="bg-lightblue">
         <div className="p-3">
           <div>
-            <p className="text-xl font-bold">맛집 등록</p>
+            <p className="text-xl font-bold">여행지 수정</p>
           </div>
         </div>
       </div>
@@ -251,8 +262,8 @@ export default function RestaurantAddPage() {
                 <select
                   id="cities"
                   className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  value={city_id}
-                  onChange={changed('city_id')}>
+                  value={city_name}
+                  onChange={changed('city_name')}>
                   <option value="">전체</option>
                   {citys.map(city => (
                     <option key={city.id} value={city.id}>
@@ -279,14 +290,14 @@ export default function RestaurantAddPage() {
               </div>
 
               <div className="pt-16">
-                <label className="text-sm font-bold">가게명</label>
+                <label className="text-sm font-bold">장소명</label>
                 <input
                   type="text"
-                  name="store_name"
+                  name="place_name"
                   className="w-full h-10 p-3 border rounded-md"
-                  placeholder="가게명을 입력하세요."
-                  value={store_name}
-                  onChange={changed('store_name')}
+                  placeholder="여행지 장소명을 입력하세요."
+                  value={place_name}
+                  onChange={changed('place_name')}
                 />
               </div>
 
@@ -296,7 +307,7 @@ export default function RestaurantAddPage() {
                   type="text"
                   name="address"
                   className="w-full h-10 p-3 border rounded-md"
-                  placeholder="맛집의 주소를 입력하세요."
+                  placeholder="여행지의 주소를 입력하세요."
                   value={address}
                   onChange={changed('address')}
                 />
@@ -327,14 +338,14 @@ export default function RestaurantAddPage() {
               </div>
 
               <div className="pt-5">
-                <label className="text-sm font-bold">대표메뉴</label>
+                <label className="text-sm font-bold">이용요금</label>
                 <input
                   type="text"
-                  name="main_menu"
+                  name="entrace_fee"
                   className="w-full h-10 p-3 border rounded-md"
-                  placeholder="대표메뉴를 입력하세요."
-                  value={main_menu}
-                  onChange={changed('main_menu')}
+                  placeholder="해당 여행지의 이용요금을 입력하세요."
+                  value={entrace_fee}
+                  onChange={changed('entrace_fee')}
                 />
               </div>
 
@@ -344,9 +355,21 @@ export default function RestaurantAddPage() {
                   type="text"
                   name="parking_status"
                   className="w-full h-10 p-3 border rounded-md"
-                  placeholder="주차여부를 입력하세요."
+                  placeholder="해당 여행지의 주차여부를 입력하세요."
                   value={parking_status}
                   onChange={changed('parking_status')}
+                />
+              </div>
+
+              <div className="pt-5">
+                <label className="text-sm font-bold">웹사이트 URL</label>
+                <input
+                  type="text"
+                  name="web_url"
+                  className="w-full h-10 p-3 border rounded-md"
+                  placeholder="해당 여행지의 웹사이트 URL을 입력하세요."
+                  value={web_url}
+                  onChange={changed('web_url')}
                 />
               </div>
 
@@ -356,7 +379,7 @@ export default function RestaurantAddPage() {
                   type="text"
                   name="short_info"
                   className="w-full h-10 p-3 border rounded-md"
-                  placeholder="해당 맛집에 대해 한줄로 설명을 작성하세요."
+                  placeholder="해당 여행지에 대해 한줄로 설명을 작성하세요."
                   value={short_info}
                   onChange={changed('short_info')}
                 />
@@ -367,14 +390,14 @@ export default function RestaurantAddPage() {
                 <textarea
                   name="content"
                   className="w-full h-32 p-3 border rounded-md"
-                  placeholder="해당 맛집에 대한 상세정보를 입력하세요."
-                  value={store_info}
-                  onChange={changed('store_info')}
+                  placeholder="해당 여행지에 대한 상세정보를 입력하세요."
+                  value={place_info}
+                  onChange={changed('place_info')}
                 />
               </div>
 
               <div className="flex flex-col pt-5">
-                <label className="text-sm font-bold">이미지 추가</label>
+                <label className="font-bold">이미지 추가</label>
 
                 <div className="flex items-center justify-center w-full pt-5">
                   {imagePreview ? (
@@ -385,6 +408,7 @@ export default function RestaurantAddPage() {
                         className="object-cover w-full h-64 rounded-lg"
                       />
                       <button
+                        type="button"
                         onClick={handleRemoveImage}
                         className="absolute p-1 text-white bg-gray-600 rounded-full top-2 right-2">
                         x
@@ -406,7 +430,7 @@ export default function RestaurantAddPage() {
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth="2"
-                            d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
+                            d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
                           />
                         </svg>
                         <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
@@ -419,7 +443,7 @@ export default function RestaurantAddPage() {
                       </div>
                       <input
                         id="dropzone-file"
-                        name="food-img"
+                        name="trip"
                         type="file"
                         className="hidden"
                         onChange={handleImageChange}

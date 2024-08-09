@@ -3,15 +3,7 @@ import {MdOutlineEditNote} from 'react-icons/md'
 import {useNavigate} from 'react-router-dom'
 
 import {get} from '../../server'
-
-type Trip = {
-  city_name: string
-  si_gu_name: string
-  place_name: string
-  short_info: string
-  adminId: string
-  author: string
-}
+import {Trip} from '../../data/types'
 
 export default function TripListPage() {
   const [trips, setTrips] = useState<Trip[]>([])
@@ -120,11 +112,11 @@ export default function TripListPage() {
                       <td className="px-6 py-4">{trip.short_info}</td>
                       <td className="px-6 py-4">{trip.author}</td>
                       <td className="px-6 py-4">
-                        <a
-                          href="#"
+                        <button
+                          onClick={() => navigate(`/trip/edit/${trip._id}`)}
                           className="font-medium text-blue-600 dark:text-blue-500 hover:underline">
                           <MdOutlineEditNote className="text-2xl" />
-                        </a>
+                        </button>
                       </td>
                     </tr>
                   ))}

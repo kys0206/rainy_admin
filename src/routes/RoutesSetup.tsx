@@ -24,6 +24,10 @@ import RestaurantAddPage from '../pages/Restaurant/add'
 import FestivalAddPage from '../pages/Festival/festival_add'
 import FestivalListPage from '../pages/Festival/festival_list'
 import CityEditPage from '../pages/Area/city_edit'
+import Si_Gu_EditPage from '../pages/Area/si_gu_edit'
+import RestaurantListPage from '../pages/Restaurant/list'
+import EditPage from '../pages/Thema/edit'
+import TripEditPage from '../pages/Trip/trip_edit'
 
 export default function RoutesSetup() {
   const {auth, id} = useAdmin() // auth 상태 가져오기
@@ -47,22 +51,25 @@ export default function RoutesSetup() {
             <Route index element={<Home />} />
             <Route path="/thema/list" element={<ThemaPage />} />
             <Route path="/thema/add" element={<AddPage />} />
+            <Route path="/thema/edit/:id" element={<EditPage />} />
 
             <Route path="/area/city/add" element={<CityAddPage />} />
             <Route path="/area/city/list" element={<CityListPage />} />
             <Route path="/area/city/edit/:id" element={<CityEditPage />} />
 
-            <Route path="/area/add" element={<CityAddPage />} />
             <Route path="/area/district/add" element={<Si_Gu_AddPage />} />
             <Route path="/area/district/list" element={<Si_Gu_ListPage />} />
+            <Route path="/area/district/edit/:id" element={<Si_Gu_EditPage />} />
 
             <Route path="/trip/add" element={<TripAddPage />} />
             <Route path="/trip/list" element={<TripListPage />} />
+            <Route path="/trip/edit/:id" element={<TripEditPage />} />
 
             <Route path="/festival/add" element={<FestivalAddPage />} />
             <Route path="/festival/list" element={<FestivalListPage />} />
 
             <Route path="/restaurant/add" element={<RestaurantAddPage />} />
+            <Route path="/restaurant/list" element={<RestaurantListPage />} />
             <Route
               path="logout"
               element={

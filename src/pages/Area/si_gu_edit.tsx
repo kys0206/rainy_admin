@@ -1,6 +1,5 @@
-import type {ChangeEvent} from 'react'
-import {useState, useCallback, useEffect} from 'react'
-import {useNavigate} from 'react-router-dom'
+import {useEffect, useState, useCallback, ChangeEvent} from 'react'
+import {useNavigate, useParams} from 'react-router-dom'
 
 import {post, get} from '../../server'
 import {City, SI_GU} from '../../data/types'
@@ -13,9 +12,10 @@ const initialFormState: SI_GU = {
   web_url: ''
 }
 
-export default function Si_Gu_AddPage() {
+export default function Si_Gu_EditPage() {
   const [citys, setCitys] = useState<City[]>([])
-  const [{si_gu_name, web_url, city_id}, setForm] = useState<SI_GU>(initialFormState)
+  const [{si_gu_name, web_url, city_id, city_name}, setForm] =
+    useState<SI_GU>(initialFormState)
   const [errorMessage, setErrorMessage] = useState<string>('')
 
   const storedData = window.localStorage.getItem('admin')
@@ -23,6 +23,7 @@ export default function Si_Gu_AddPage() {
   const author = parsedData.name || ''
   const adminId = parsedData.id || ''
 
+  const {id} = useParams()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -31,7 +32,6 @@ export default function Si_Gu_AddPage() {
       .then(data => {
         if (data.ok) {
           setCitys(data.body)
-          // console.log(data.body)
         } else {
           setErrorMessage(data.errorMessage)
         }
@@ -39,60 +39,82 @@ export default function Si_Gu_AddPage() {
       .catch(e => {
         if (e instanceof Error) setErrorMessage(e.message)
       })
-  }, [])
+
+    if (id) {
+      get(`/area/district/info/${id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.ok) {
+            setForm(data.body)
+          } else {
+            setErrorMessage(data.errorMessage)
+          }
+        })
+        .catch(e => {
+          if (e instanceof Error) setErrorMessage(e.message)
+        })
+    }
+  }, [id])
 
   const changed = useCallback(
     (key: keyof SI_GU) =>
       (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        setForm(obj => ({...obj, [key]: e.target.value}))
-        if (key === 'city_id') {
-          const selectedCity = citys.find(city => city.id === e.target.value)
-          if (selectedCity) {
-            console.log(`ID: ${selectedCity.id}, City Name: ${selectedCity.city_name}`)
+        setForm(prevForm => {
+          const updatedForm = {...prevForm, [key]: e.target.value}
+
+          if (key === 'city_id') {
+            const selectedCity = citys.find(city => city.id === e.target.value)
+            if (selectedCity) {
+              updatedForm.city_name = selectedCity.city_name // city_name 연동
+              console.log(`ID: ${selectedCity.id}, City Name: ${selectedCity.city_name}`)
+            }
           }
-        }
+
+          return updatedForm
+        })
       },
     [citys]
   )
 
-  const addCity = useCallback(
+  const updateCity = useCallback(
     async (
       si_gu_name: string,
       web_url: string,
       city_id: string,
+      city_name: string,
       adminId: string,
       author: string
     ) => {
       try {
-        const response = await post('/area/district/add', {
+        const response = await post(`/area/district/edit/${id}`, {
           si_gu_name,
           web_url,
-          city_name: city_id,
+          city_id,
+          city_name,
           adminId,
           author
         })
         const data = await response.json()
         if (data.ok) {
           alert('작성이 완료되었습니다.')
-          navigate('/area/city/list')
+          navigate('/area/district/list')
         } else {
-          setErrorMessage(data.errorMessage || '시/구 등록에 실패했습니다.')
+          setErrorMessage(data.errorMessage || '시/구 수정에 실패했습니다.')
         }
       } catch (error) {
-        setErrorMessage('시/구 등록 중 오류가 발생했습니다.')
+        setErrorMessage('시/구 수정 중 오류가 발생했습니다.')
       }
     },
     [navigate]
   )
 
   const createThema = useCallback(() => {
-    addCity(si_gu_name, web_url, city_id, adminId, author)
-  }, [si_gu_name, web_url, city_id, adminId, author, addCity])
+    updateCity(si_gu_name, web_url, city_id, city_name, adminId, author)
+  }, [si_gu_name, web_url, city_id, city_name, adminId, author, updateCity])
 
   const handleSubmit = useCallback(
     (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault()
-      // Additional validation if needed
       createThema()
     },
     [createThema]
@@ -120,7 +142,7 @@ export default function Si_Gu_AddPage() {
                 <select
                   id="countries"
                   className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  value={city_id}
+                  value={city_name}
                   onChange={changed('city_id')}>
                   <option value="">전체</option>
                   {citys.map(city => (

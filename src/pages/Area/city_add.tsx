@@ -5,15 +5,15 @@ import {post} from '../../server'
 import {City} from '../../data/types'
 
 const initialFormState: City = {
-  _id: '',
+  id: '',
   city_name: '',
   short_name: '',
-  imgURL: ''
+  imgName: ''
 }
 
 export default function AddPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [{city_name, short_name, imgURL}, setForm] = useState<City>(initialFormState) // City 타입을 사용
+  const [{city_name, short_name, imgName}, setForm] = useState<City>(initialFormState) // City 타입을 사용
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [imageFile, setImageFile] = useState<File | null>(null)
 
@@ -40,26 +40,26 @@ export default function AddPage() {
       }
       reader.readAsDataURL(file)
       setImageFile(file)
-      setForm(prev => ({...prev, imgURL: file.name}))
+      setForm(prev => ({...prev, imgName: file.name}))
     }
   }, [])
 
   const handleRemoveImage = useCallback(() => {
     setImagePreview(null)
     setImageFile(null)
-    setForm(prev => ({...prev, imgURL: ''}))
+    setForm(prev => ({...prev, imgName: ''}))
   }, [])
 
   const addThema = useCallback(
     async (
       city_name: string,
       short_name: string,
-      imgURL: string,
+      imgName: string,
       adminId: string,
       author: string
     ) => {
       try {
-        let uploadedImageURL = imgURL
+        let uploadedImageURL = imgName
 
         if (imageFile) {
           const formData = new FormData()
@@ -80,7 +80,7 @@ export default function AddPage() {
         const response = await post('/area/city/add', {
           city_name,
           short_name,
-          imgURL: uploadedImageURL,
+          imgName: uploadedImageURL,
           adminId,
           author
         })
@@ -99,8 +99,8 @@ export default function AddPage() {
   )
 
   const createThema = useCallback(() => {
-    addThema(city_name, short_name, imgURL, adminId, author)
-  }, [city_name, short_name, imgURL, adminId, author, addThema])
+    addThema(city_name, short_name, imgName, adminId, author)
+  }, [city_name, short_name, imgName, adminId, author, addThema])
 
   const handleSubmit = useCallback(
     (e: React.FormEvent<HTMLFormElement>) => {

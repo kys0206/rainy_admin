@@ -102,7 +102,7 @@ export default function CityListPage() {
                       <td className="px-6 py-4">
                         <button
                           className="font-medium text-blue-600 dark:text-blue-500 hover:underline"
-                          onClick={() => navigate(`/area/city/edit/${city._id}`)}>
+                          onClick={() => navigate(`/area/city/edit/${city.id}`)}>
                           <MdOutlineEditNote className="text-2xl" />
                         </button>
                       </td>

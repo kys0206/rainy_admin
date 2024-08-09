@@ -1,29 +1,24 @@
 import {useState, useEffect} from 'react'
-import {MdOutlineEditNote, MdDeleteOutline} from 'react-icons/md'
+import {MdOutlineEditNote} from 'react-icons/md'
 import {useNavigate} from 'react-router-dom'
 
-import {del, get, post} from '../../server'
-import {Thema} from '../../data/types'
+import {get} from '../../server'
+import {Restaurant} from '../../data/types'
 
-export default function ListPage() {
-  const [themas, setThemas] = useState<Thema[]>([])
+export default function RestaurantListPage() {
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([])
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [currentPage, setCurrentPage] = useState<number>(1)
   const perPage = 10
 
-  const indexOfLastItem = currentPage * perPage
-  const indexOfFirstItem = indexOfLastItem - perPage
-  const currentItems = themas.slice(indexOfFirstItem, indexOfLastItem)
-  const totalPages = Math.ceil(themas.length / perPage)
-
   const navigate = useNavigate()
 
   useEffect(() => {
-    get('/thema/list')
+    get('/restaurant/list')
       .then(res => res.json())
       .then(data => {
         if (data.ok) {
-          setThemas(data.body)
+          setRestaurants(data.body)
         } else {
           setErrorMessage(data.errorMesage)
         }
@@ -44,37 +39,21 @@ export default function ListPage() {
     setCurrentPage(pageNumber)
   }
 
+  const indexOfLastItem = currentPage * perPage
+  const indexOfFirstItem = indexOfLastItem - perPage
+  const currentItems = restaurants.slice(indexOfFirstItem, indexOfLastItem)
+  const totalPages = Math.ceil(restaurants.length / perPage)
+
   const moveAddPage = () => {
-    navigate('/thema/add')
-  }
-
-  const handleDelete = async (id: string) => {
-    const isConfirmed = window.confirm('해당 게시물을 삭제하시겠습니까?')
-    if (isConfirmed) {
-      try {
-        const response = await del(`/thema/delete/${id}`)
-        const data = await response.json()
-
-        if (data.ok) {
-          alert('게시물이 성공적으로 삭제되었습니다.')
-          setThemas(prevThemas => prevThemas.filter(thema => thema._id !== id))
-        } else {
-          alert(`삭제 실패: ${data.errorMessage}`)
-        }
-      } catch (error) {
-        if (error instanceof Error) {
-          alert(`에러 발생: ${error.message}`)
-        }
-      }
-    }
+    navigate('/restaurant/add')
   }
 
   return (
     <div>
-      <div className="bg-yellow-300">
+      <div className="bg-lightblue">
         <div className="p-3">
           <div>
-            <p className="text-xl font-bold">테마 목록</p>
+            <p className="text-xl font-bold">여행지 목록</p>
           </div>
         </div>
       </div>
@@ -104,13 +83,16 @@ export default function ListPage() {
                       INDEX
                     </th>
                     <th scope="col" className="px-6 py-3">
-                      ISPUBLIC
+                      CITY_NAME
                     </th>
                     <th scope="col" className="px-6 py-3">
-                      TITLE
+                      SI_GU_NAME
                     </th>
                     <th scope="col" className="px-6 py-3">
-                      CONTENT
+                      title
+                    </th>
+                    <th scope="col" className="px-6 py-3">
+                      SHORT_INFO
                     </th>
                     <th scope="col" className="px-6 py-3">
                       AUTHOR
@@ -119,42 +101,22 @@ export default function ListPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {currentItems.map((thema, index) => (
+                  {currentItems.map((restaurant, index) => (
                     <tr
                       key={index}
                       className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                       <td className="px-6 py-4">{indexOfFirstItem + index + 1}</td>
+                      <td className="px-6 py-4">{restaurant.city_name}</td>
+                      <td className="px-6 py-4">{restaurant.si_gu_name}</td>
+                      <td className="px-6 py-4">{restaurant.store_name}</td>
+                      <td className="px-6 py-4">{restaurant.short_info}</td>
+                      <td className="px-6 py-4">{restaurant.author}</td>
                       <td className="px-6 py-4">
-                        <label className="relative flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            value=""
-                            className="sr-only peer"
-                            checked={thema.isPublic}
-                          />
-                          <div className="w-9 h-5 bg-gray-200 hover:bg-gray-300 peer-focus:outline-0  rounded-full peer transition-all ease-in-out duration-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600 hover:peer-checked:bg-indigo-700 "></div>
-                        </label>
-                      </td>
-                      <td
-                        scope="row"
-                        className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                        {thema.title}
-                      </td>
-                      <td className="px-6 py-4">{thema.content}</td>
-                      <td className="px-6 py-4">{thema.author}</td>
-                      <td className="px-6 py-4">
-                        <div>
-                          <button
-                            onClick={() => navigate(`/thema/edit/${thema._id}`)}
-                            className="font-medium text-blue-600 dark:text-blue-500 hover:underline">
-                            <MdOutlineEditNote className="text-2xl" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(thema._id)}
-                            className="font-medium text-green-600 dark:text-green-500 hover:underline">
-                            <MdDeleteOutline className="text-2xl" />
-                          </button>
-                        </div>
+                        <a
+                          href="#"
+                          className="font-medium text-blue-600 dark:text-blue-500 hover:underline">
+                          <MdOutlineEditNote className="text-2xl" />
+                        </a>
                       </td>
                     </tr>
                   ))}
@@ -165,11 +127,11 @@ export default function ListPage() {
                 aria-label="Table navigation">
                 <span className="block w-full mb-4 text-sm font-normal text-gray-500 dark:text-gray-400 md:mb-0 md:inline md:w-auto">
                   <span className="font-semibold text-gray-900 dark:text-white">
-                    {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, themas.length)}
+                    {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, restaurants.length)}
                   </span>{' '}
                   of{' '}
                   <span className="font-semibold text-gray-900 dark:text-white">
-                    {themas.length}
+                    {restaurants.length}
                   </span>
                 </span>
                 <ul className="inline-flex h-8 pr-1 -space-x-px text-sm rtl:space-x-reverse">

@@ -84,9 +84,9 @@ export default function FestivalAddPage() {
       (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         setForm(obj => ({...obj, [key]: e.target.value}))
         if (key === 'city_id') {
-          const selectedCity = citys.find(city => city._id === e.target.value)
+          const selectedCity = citys.find(city => city.id === e.target.value)
           if (selectedCity) {
-            console.log(`ID: ${selectedCity._id}, City Name: ${selectedCity.city_name}`)
+            console.log(`ID: ${selectedCity.id}, City Name: ${selectedCity.city_name}`)
           }
         }
       },
@@ -244,7 +244,7 @@ export default function FestivalAddPage() {
                   onChange={changed('city_id')}>
                   <option value="">전체</option>
                   {citys.map(city => (
-                    <option key={city._id} value={city._id}>
+                    <option key={city.id} value={city.id}>
                       {city.city_name}
                     </option>
                   ))}

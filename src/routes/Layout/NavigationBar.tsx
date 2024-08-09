@@ -160,15 +160,6 @@ export default function NavigationBar() {
                     여행지 등록
                   </NavLink>
                 </li>
-                <li>
-                  <NavLink
-                    to=""
-                    className={({isActive}) =>
-                      `block ${isActive ? 'font-bold text-blue-700' : ''}`
-                    }>
-                    3
-                  </NavLink>
-                </li>
               </ul>
             </article>
           </details>

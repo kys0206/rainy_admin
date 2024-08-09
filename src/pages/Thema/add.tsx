@@ -5,14 +5,16 @@ import {post} from '../../server'
 import {Thema} from '../../data/types'
 
 const initialFormState: Thema = {
+  _id: '',
+  isPublic: true,
   title: '',
   content: '',
-  imgURL: ''
+  imgName: ''
 }
 
 export default function AddPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [{title, content, imgURL}, setForm] = useState<Thema>(initialFormState)
+  const [{isPublic, title, content, imgName}, setForm] = useState<Thema>(initialFormState)
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [imageFile, setImageFile] = useState<File | null>(null) // 파일 객체 상태 추가
 
@@ -30,6 +32,11 @@ export default function AddPage() {
     []
   )
 
+  const handlePublicChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    const isChecked = e.target.checked
+    setForm(prev => ({...prev, isPublic: isChecked}))
+  }, [])
+
   const handleImageChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -39,26 +46,27 @@ export default function AddPage() {
       }
       reader.readAsDataURL(file)
       setImageFile(file) // 파일 객체를 상태에 저장
-      setForm(prev => ({...prev, imgURL: file.name})) // 파일 이름을 상태에 저장
+      setForm(prev => ({...prev, imgName: file.name})) // 파일 이름을 상태에 저장
     }
   }, [])
 
   const handleRemoveImage = useCallback(() => {
     setImagePreview(null)
     setImageFile(null) // 파일 객체 상태 초기화
-    setForm(prev => ({...prev, imgURL: ''}))
+    setForm(prev => ({...prev, imgName: ''}))
   }, [])
 
   const addThema = useCallback(
     async (
+      isPublic: boolean,
       title: string,
       content: string,
-      imgURL: string,
+      imgName: string,
       adminId: string,
       author: string
     ) => {
       try {
-        let uploadedImageURL = imgURL
+        let uploadedImageURL = imgName
 
         if (imageFile) {
           const formData = new FormData()
@@ -77,9 +85,10 @@ export default function AddPage() {
         }
 
         const response = await post('/thema/add', {
+          isPublic,
           title,
           content,
-          imgURL: uploadedImageURL,
+          imgName: uploadedImageURL,
           adminId,
           author
         })
@@ -98,8 +107,8 @@ export default function AddPage() {
   )
 
   const createThema = useCallback(() => {
-    addThema(title, content, imgURL, adminId, author)
-  }, [title, content, imgURL, adminId, author, addThema])
+    addThema(isPublic, title, content, imgName, adminId, author)
+  }, [isPublic, title, content, imgName, adminId, author, addThema])
 
   const handleSubmit = useCallback(
     (e: React.FormEvent<HTMLFormElement>) => {
@@ -122,7 +131,26 @@ export default function AddPage() {
         <div className="p-5">
           <form onSubmit={handleSubmit}>
             <div className="p-5 bg-white rounded-xl">
-              <div>
+              <div className="pt-5">
+                <label className="font-bold">공개여부</label>
+
+                <div className="flex items-center pt-2">
+                  <span className="mr-3 text-sm font-medium text-gray-600 ">비공개</span>
+                  <label className="relative flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      value=""
+                      className="sr-only peer"
+                      checked={isPublic}
+                      onChange={handlePublicChange}
+                    />
+                    <div className="w-9 h-5 bg-gray-200 hover:bg-gray-300 peer-focus:outline-0  rounded-full peer transition-all ease-in-out duration-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600 hover:peer-checked:bg-indigo-700 "></div>
+                  </label>
+                  <span className="ml-3 text-sm font-medium text-gray-600 ">공개</span>
+                </div>
+              </div>
+
+              <div className="pt-5">
                 <label className="font-bold">제목</label>
                 <input
                   type="text"

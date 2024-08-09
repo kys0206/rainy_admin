@@ -1,71 +1,112 @@
-import type {ChangeEvent} from 'react'
-import {useState, useCallback} from 'react'
-import {useNavigate} from 'react-router-dom'
-import {post} from '../../server'
+import {useEffect, useState, useCallback, ChangeEvent} from 'react'
+import {useNavigate, useParams} from 'react-router-dom'
 
-type ThemaFormType = {
-  title: string
-  content: string
-  imgURL: string
-}
+import {get, post} from '../../server'
+import {Thema} from '../../data/types'
 
-const initialFormState: ThemaFormType = {
+const initialFormState: Thema = {
+  _id: '',
+  isPublic: true,
   title: '',
   content: '',
-  imgURL: ''
+  imgName: ''
 }
 
 export default function EditPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [{title, content, imgURL}, setForm] = useState<ThemaFormType>(initialFormState)
+  const [{isPublic, title, content, imgName}, setForm] = useState<Thema>(initialFormState)
   const [errorMessage, setErrorMessage] = useState<string>('')
+  const [imageFile, setImageFile] = useState<File | null>(null)
 
   const storedData = window.localStorage.getItem('admin')
   const parsedData = storedData ? JSON.parse(storedData) : {}
   const author = parsedData.name || ''
   const adminId = parsedData.id || ''
 
+  const {id} = useParams()
   const navigate = useNavigate()
 
+  useEffect(() => {
+    if (id) {
+      get(`/thema/info/${id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.ok) {
+            setForm(data.body)
+            setImagePreview(data.body.imgName)
+          } else {
+            setErrorMessage(data.errorMessage)
+          }
+        })
+        .catch(e => {
+          if (e instanceof Error) setErrorMessage(e.message)
+        })
+    }
+  }, [id])
+
   const changed = useCallback(
-    (key: keyof ThemaFormType) =>
-      (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        setForm(obj => ({...obj, [key]: e.target.value}))
-      },
+    (key: keyof Thema) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setForm(obj => ({...obj, [key]: e.target.value}))
+    },
     []
   )
 
+  const handlePublicChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    const isChecked = e.target.checked
+    setForm(prev => ({...prev, isPublic: isChecked}))
+  }, [])
+
   const handleImageChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    console.log(file)
     if (file) {
       const reader = new FileReader()
-      reader.readAsDataURL(file)
-      reader.onloadend = () => {
+      reader.onload = () => {
         setImagePreview(reader.result as string)
-        setForm(prev => ({...prev, imgURL: reader.result as string}))
       }
+      reader.readAsDataURL(file)
+      setImageFile(file)
+      setForm(prev => ({...prev, imgURL: file.name}))
     }
   }, [])
 
   const handleRemoveImage = useCallback(() => {
     setImagePreview(null)
+    setImageFile(null)
     setForm(prev => ({...prev, imgURL: ''}))
   }, [])
 
-  const addThema = useCallback(
+  const updateThema = useCallback(
     async (
+      isPublic: boolean,
       title: string,
       content: string,
-      imgURL: string,
+      imgName: string,
       adminId: string,
       author: string
     ) => {
       try {
-        const response = await post('/thema/upload', {
+        let uploadedImageURL = imgName
+
+        if (imageFile) {
+          const formData = new FormData()
+          formData.append('image', imageFile)
+
+          const uploadResponse = await post('/thema/upload', formData)
+          const uploadData = await uploadResponse.json()
+
+          if (uploadData.success) {
+            uploadedImageURL = `${uploadData.imageName}`
+          } else {
+            setErrorMessage('이미지 업로드에 실패했습니다.')
+            return
+          }
+        }
+
+        const response = await post(`/thema/edit/${id}`, {
+          isPublic,
           title,
           content,
-          imgURL,
+          imgName: uploadedImageURL,
           adminId,
           author
         })
@@ -74,18 +115,18 @@ export default function EditPage() {
           alert('작성이 완료되었습니다.')
           navigate('/thema/list')
         } else {
-          setErrorMessage(data.errorMessage || '테마 등록에 실패했습니다.')
+          setErrorMessage(data.errorMessage || '테마정보 수정에 실패했습니다.')
         }
       } catch (error) {
-        setErrorMessage('테마 등록 중 오류가 발생했습니다.')
+        setErrorMessage('테마정보 수정 중 오류가 발생했습니다.')
       }
     },
-    [navigate]
+    [navigate, imageFile, id]
   )
 
   const createThema = useCallback(() => {
-    addThema(title, content, imgURL, adminId, author)
-  }, [title, content, imgURL, adminId, author, addThema])
+    updateThema(isPublic, title, content, imgName, adminId, author)
+  }, [isPublic, title, content, imgName, adminId, author, updateThema])
 
   const handleSubmit = useCallback(
     (e: React.FormEvent<HTMLFormElement>) => {
@@ -101,7 +142,7 @@ export default function EditPage() {
       <div className="bg-yellow-300">
         <div className="p-3">
           <div>
-            <p className="text-xl font-bold">테마 등록</p>
+            <p className="text-xl font-bold">테마 수정</p>
           </div>
         </div>
       </div>
@@ -109,7 +150,26 @@ export default function EditPage() {
         <div className="p-5">
           <form onSubmit={handleSubmit}>
             <div className="p-5 bg-white rounded-xl">
-              <div>
+              <div className="pt-5">
+                <label className="font-bold">공개여부</label>
+
+                <div className="flex items-center pt-2">
+                  <span className="mr-3 text-sm font-medium text-gray-600 ">비공개</span>
+                  <label className="relative flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      value=""
+                      className="sr-only peer"
+                      checked={isPublic}
+                      onChange={handlePublicChange}
+                    />
+                    <div className="w-9 h-5 bg-gray-200 hover:bg-gray-300 peer-focus:outline-0  rounded-full peer transition-all ease-in-out duration-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600 hover:peer-checked:bg-indigo-700 "></div>
+                  </label>
+                  <span className="ml-3 text-sm font-medium text-gray-600 ">공개</span>
+                </div>
+              </div>
+
+              <div className="pt-5">
                 <label className="font-bold">제목</label>
                 <input
                   type="text"

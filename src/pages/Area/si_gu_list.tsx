@@ -45,7 +45,7 @@ export default function Si_Gu_ListPage() {
   const totalPages = Math.ceil(citys.length / perPage)
 
   const moveAddPage = () => {
-    navigate('/area/city/add')
+    navigate('/area/district/add')
   }
 
   return (
@@ -95,20 +95,20 @@ export default function Si_Gu_ListPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {currentItems.map((thema, index) => (
+                  {currentItems.map((district, index) => (
                     <tr
                       key={index}
                       className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                       <td className="px-6 py-4">{indexOfFirstItem + index + 1}</td>
-                      <td className="px-6 py-4">{thema.city_name}</td>
-                      <td className="px-6 py-4">{thema.si_gu_name}</td>
-                      <td className="px-6 py-4">{thema.author}</td>
+                      <td className="px-6 py-4">{district.city_name}</td>
+                      <td className="px-6 py-4">{district.si_gu_name}</td>
+                      <td className="px-6 py-4">{district.author}</td>
                       <td className="px-6 py-4">
-                        <a
-                          href="#"
+                        <button
+                          onClick={() => navigate(`/area/district/edit/${district._id}`)}
                           className="font-medium text-blue-600 dark:text-blue-500 hover:underline">
                           <MdOutlineEditNote className="text-2xl" />
-                        </a>
+                        </button>
                       </td>
                     </tr>
                   ))}

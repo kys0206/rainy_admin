@@ -4,15 +4,15 @@ import {get, post} from '../../server'
 import {City} from '../../data/types'
 
 const initialFormState: City = {
-  _id: '',
+  id: '',
   city_name: '',
   short_name: '',
-  imgURL: ''
+  imgName: ''
 }
 
 export default function CityEditPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [{city_name, short_name, imgURL}, setForm] = useState<City>(initialFormState)
+  const [{city_name, short_name, imgName}, setForm] = useState<City>(initialFormState)
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [imageFile, setImageFile] = useState<File | null>(null)
 
@@ -31,7 +31,7 @@ export default function CityEditPage() {
         .then(data => {
           if (data.ok) {
             setForm(data.body)
-            setImagePreview(data.body.imgURL)
+            setImagePreview(data.body.imgName)
           } else {
             setErrorMessage(data.errorMessage)
           }
@@ -58,26 +58,26 @@ export default function CityEditPage() {
       }
       reader.readAsDataURL(file)
       setImageFile(file)
-      setForm(prev => ({...prev, imgURL: file.name}))
+      setForm(prev => ({...prev, imgName: file.name}))
     }
   }, [])
 
   const handleRemoveImage = useCallback(() => {
     setImagePreview(null)
     setImageFile(null)
-    setForm(prev => ({...prev, imgURL: ''}))
+    setForm(prev => ({...prev, imgName: ''}))
   }, [])
 
   const updateCity = useCallback(
     async (
       city_name: string,
       short_name: string,
-      imgURL: string,
+      imgName: string,
       adminId: string,
       author: string
     ) => {
       try {
-        let uploadedImageURL = imgURL
+        let uploadedImageURL = imgName
 
         if (imageFile) {
           const formData = new FormData()
@@ -97,7 +97,7 @@ export default function CityEditPage() {
         const response = await post(`/area/city/edit/${id}`, {
           city_name,
           short_name,
-          imgURL: uploadedImageURL,
+          imgName: uploadedImageURL,
           adminId,
           author
         })
@@ -118,9 +118,9 @@ export default function CityEditPage() {
   const handleSubmit = useCallback(
     (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault()
-      updateCity(city_name, short_name, imgURL, adminId, author)
+      updateCity(city_name, short_name, imgName, adminId, author)
     },
-    [updateCity, city_name, short_name, imgURL, adminId, author]
+    [updateCity, city_name, short_name, imgName, adminId, author]
   )
 
   return (
