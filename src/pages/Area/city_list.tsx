@@ -1,8 +1,8 @@
 import {useState, useEffect} from 'react'
-import {MdOutlineEditNote} from 'react-icons/md'
 import {useNavigate} from 'react-router-dom'
+import {MdOutlineEditNote, MdDeleteOutline} from 'react-icons/md'
 
-import {get} from '../../server'
+import {del, get} from '../../server'
 import {City} from '../../data/types'
 
 export default function CityListPage() {
@@ -10,6 +10,11 @@ export default function CityListPage() {
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [currentPage, setCurrentPage] = useState<number>(1)
   const perPage = 10
+
+  const indexOfLastItem = currentPage * perPage
+  const indexOfFirstItem = indexOfLastItem - perPage
+  const currentItems = citys.slice(indexOfFirstItem, indexOfLastItem)
+  const totalPages = Math.ceil(citys.length / perPage)
 
   const navigate = useNavigate()
 
@@ -35,14 +40,30 @@ export default function CityListPage() {
     }
   }, [errorMessage])
 
+  const handleDelete = async (id: string) => {
+    const isConfirmed = window.confirm('해당 게시물을 삭제하시겠습니까?')
+    if (isConfirmed) {
+      try {
+        const response = await del(`/area/city/delete/${id}`)
+        const data = await response.json()
+
+        if (data.ok) {
+          alert('게시물이 성공적으로 삭제되었습니다.')
+          setCitys(prevCitys => prevCitys.filter(city => city._id !== id))
+        } else {
+          alert(`삭제 실패: ${data.errorMessage}`)
+        }
+      } catch (error) {
+        if (error instanceof Error) {
+          alert(`에러 발생: ${error.message}`)
+        }
+      }
+    }
+  }
+
   const handlePageChange = (pageNumber: number) => {
     setCurrentPage(pageNumber)
   }
-
-  const indexOfLastItem = currentPage * perPage
-  const indexOfFirstItem = indexOfLastItem - perPage
-  const currentItems = citys.slice(indexOfFirstItem, indexOfLastItem)
-  const totalPages = Math.ceil(citys.length / perPage)
 
   const moveAddPage = () => {
     navigate('/area/city/add')
@@ -88,7 +109,9 @@ export default function CityListPage() {
                     <th scope="col" className="px-6 py-3">
                       AUTHOR
                     </th>
-                    <th scope="col" className="px-6 py-3"></th>
+                    <th scope="col" className="px-6 py-3">
+                      EDIT / REMOVE
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -100,11 +123,18 @@ export default function CityListPage() {
                       <td className="px-6 py-4">{city.short_name}</td>
                       <td className="px-6 py-4">{city.author}</td>
                       <td className="px-6 py-4">
-                        <button
-                          className="font-medium text-blue-600 dark:text-blue-500 hover:underline"
-                          onClick={() => navigate(`/area/city/edit/${city.id}`)}>
-                          <MdOutlineEditNote className="text-2xl" />
-                        </button>
+                        <div>
+                          <button
+                            className="font-medium text-blue-600 dark:text-blue-500 hover:underline"
+                            onClick={() => navigate(`/area/city/edit/${city._id}`)}>
+                            <MdOutlineEditNote className="text-2xl" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(city._id)}
+                            className="font-medium text-green-600 dark:text-green-500 hover:underline">
+                            <MdDeleteOutline className="text-2xl" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

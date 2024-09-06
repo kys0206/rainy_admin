@@ -1,8 +1,8 @@
 import {useState, useEffect} from 'react'
-import {MdOutlineEditNote} from 'react-icons/md'
 import {useNavigate} from 'react-router-dom'
+import {MdOutlineEditNote, MdDeleteOutline} from 'react-icons/md'
 
-import {get} from '../../server'
+import {del, get} from '../../server'
 import {Restaurant} from '../../data/types'
 
 export default function RestaurantListPage() {
@@ -34,6 +34,29 @@ export default function RestaurantListPage() {
       setErrorMessage('')
     }
   }, [errorMessage])
+
+  const handleDelete = async (id: string) => {
+    const isConfirmed = window.confirm('해당 게시물을 삭제하시겠습니까?')
+    if (isConfirmed) {
+      try {
+        const response = await del(`/restaurant/delete/${id}`)
+        const data = await response.json()
+
+        if (data.ok) {
+          alert('게시물이 성공적으로 삭제되었습니다.')
+          setRestaurants(prevRestaurants =>
+            prevRestaurants.filter(restaurant => restaurant._id !== id)
+          )
+        } else {
+          alert(`삭제 실패: ${data.errorMessage}`)
+        }
+      } catch (error) {
+        if (error instanceof Error) {
+          alert(`에러 발생: ${error.message}`)
+        }
+      }
+    }
+  }
 
   const handlePageChange = (pageNumber: number) => {
     setCurrentPage(pageNumber)
@@ -97,7 +120,9 @@ export default function RestaurantListPage() {
                     <th scope="col" className="px-6 py-3">
                       AUTHOR
                     </th>
-                    <th scope="col" className="px-6 py-3"></th>
+                    <th scope="col" className="px-6 py-3">
+                      EDIT / REMOVE
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -112,11 +137,16 @@ export default function RestaurantListPage() {
                       <td className="px-6 py-4">{restaurant.short_info}</td>
                       <td className="px-6 py-4">{restaurant.author}</td>
                       <td className="px-6 py-4">
-                        <a
-                          href="#"
+                        <button
+                          onClick={() => navigate(`/restaurant/edit/${restaurant._id}`)}
                           className="font-medium text-blue-600 dark:text-blue-500 hover:underline">
                           <MdOutlineEditNote className="text-2xl" />
-                        </a>
+                        </button>
+                        <button
+                          onClick={() => handleDelete(restaurant._id)}
+                          className="font-medium text-green-600 dark:text-green-500 hover:underline">
+                          <MdDeleteOutline className="text-2xl" />
+                        </button>
                       </td>
                     </tr>
                   ))}

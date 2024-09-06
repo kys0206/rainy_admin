@@ -1,20 +1,12 @@
 import {useState, useEffect} from 'react'
-import {MdOutlineEditNote} from 'react-icons/md'
 import {useNavigate} from 'react-router-dom'
+import {MdOutlineEditNote, MdDeleteOutline} from 'react-icons/md'
 
-import {get} from '../../server'
-
-type Trip = {
-  city_name: string
-  si_gu_name: string
-  title: string
-  short_info: string
-  adminId: string
-  author: string
-}
+import {del, get} from '../../server'
+import {Festival} from '../../data/types'
 
 export default function FestivalListPage() {
-  const [festivals, setFestivals] = useState<Trip[]>([])
+  const [festivals, setFestivals] = useState<Festival[]>([])
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [currentPage, setCurrentPage] = useState<number>(1)
   const perPage = 10
@@ -43,6 +35,29 @@ export default function FestivalListPage() {
     }
   }, [errorMessage])
 
+  const handleDelete = async (id: string) => {
+    const isConfirmed = window.confirm('해당 게시물을 삭제하시겠습니까?')
+    if (isConfirmed) {
+      try {
+        const response = await del(`/festival/delete/${id}`)
+        const data = await response.json()
+
+        if (data.ok) {
+          alert('게시물이 성공적으로 삭제되었습니다.')
+          setFestivals(prevFestivals =>
+            prevFestivals.filter(festival => festival._id !== id)
+          )
+        } else {
+          alert(`삭제 실패: ${data.errorMessage}`)
+        }
+      } catch (error) {
+        if (error instanceof Error) {
+          alert(`에러 발생: ${error.message}`)
+        }
+      }
+    }
+  }
+
   const handlePageChange = (pageNumber: number) => {
     setCurrentPage(pageNumber)
   }
@@ -53,7 +68,7 @@ export default function FestivalListPage() {
   const totalPages = Math.ceil(festivals.length / perPage)
 
   const moveAddPage = () => {
-    navigate('/trip/add')
+    navigate('/festival/add')
   }
 
   return (
@@ -100,31 +115,36 @@ export default function FestivalListPage() {
                       title
                     </th>
                     <th scope="col" className="px-6 py-3">
-                      SHORT_INFO
-                    </th>
-                    <th scope="col" className="px-6 py-3">
                       AUTHOR
                     </th>
-                    <th scope="col" className="px-6 py-3"></th>
+                    <th scope="col" className="px-6 py-3">
+                      EDIT / REMOVE
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {currentItems.map((trip, index) => (
+                  {currentItems.map((festival, index) => (
                     <tr
                       key={index}
                       className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                       <td className="px-6 py-4">{indexOfFirstItem + index + 1}</td>
-                      <td className="px-6 py-4">{trip.city_name}</td>
-                      <td className="px-6 py-4">{trip.si_gu_name}</td>
-                      <td className="px-6 py-4">{trip.title}</td>
-                      <td className="px-6 py-4">{trip.short_info}</td>
-                      <td className="px-6 py-4">{trip.author}</td>
+                      <td className="px-6 py-4">{festival.city_name}</td>
+                      <td className="px-6 py-4">{festival.si_gu_name}</td>
+                      <td className="px-6 py-4">{festival.title}</td>
+                      <td className="px-6 py-4">{festival.author}</td>
                       <td className="px-6 py-4">
-                        <a
-                          href="#"
-                          className="font-medium text-blue-600 dark:text-blue-500 hover:underline">
-                          <MdOutlineEditNote className="text-2xl" />
-                        </a>
+                        <div>
+                          <button
+                            onClick={() => navigate(`/festival/edit/${festival._id}`)}
+                            className="font-medium text-blue-600 dark:text-blue-500 hover:underline">
+                            <MdOutlineEditNote className="text-2xl" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(festival._id)}
+                            className="font-medium text-green-600 dark:text-green-500 hover:underline">
+                            <MdDeleteOutline className="text-2xl" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

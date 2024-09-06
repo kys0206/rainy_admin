@@ -1,48 +1,49 @@
-import {useEffect, useState, useCallback, ChangeEvent, KeyboardEvent} from 'react'
+import {useEffect, useState, useCallback, ChangeEvent} from 'react'
 import {useNavigate, useParams} from 'react-router-dom'
 import {post, get} from '../../server'
-import {City, District, Trip} from '../../data/types'
+import {City, District, Festival} from '../../data/types'
 
-const initialFormState: Trip = {
+const initialFormState: Festival = {
   _id: '',
+  id: '',
+  isPublic: true,
   city_id: '',
   city_name: '',
   si_gu_name: '',
-  place_name: '',
-  imgName: '',
+  status: true,
+  title: '',
+  festival_period: '',
+  festival_info: '',
+  content: '',
   address: '',
-  contact: '',
-  operating_hours: '',
   entrace_fee: '',
-  parking_status: '',
-  web_url: '',
-  short_info: '',
-  place_info: ''
+  contact: '',
+  imgName: '',
+  web_url: ''
 }
 
-export default function TripEditPage() {
+export default function FestivalEditPage() {
   const [citys, setCitys] = useState<City[]>([])
   const [districts, setDistricts] = useState<District[]>([])
   const [
     {
+      isPublic,
       city_name,
       si_gu_name,
-      place_name,
-      imgName,
+      status,
+      title,
+      festival_period,
+      festival_info,
+      content,
       address,
-      contact,
-      operating_hours,
       entrace_fee,
-      parking_status,
-      web_url,
-      short_info,
-      place_info
+      contact,
+      imgName,
+      web_url
     },
     setForm
-  ] = useState<Trip>(initialFormState)
+  ] = useState<Festival>(initialFormState)
   const [errorMessage, setErrorMessage] = useState<string>('')
-  const [tags, setTags] = useState<string[]>([])
-  const [inputValue, setInputValue] = useState('')
 
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [imageFile, setImageFile] = useState<File | null>(null) // 파일 객체 상태 추가
@@ -83,13 +84,12 @@ export default function TripEditPage() {
       })
 
     if (id) {
-      get(`/trip/info/${id}`)
+      get(`/festival/info/${id}`)
         .then(res => res.json())
         .then(data => {
           if (data.ok) {
             setForm(data.body)
             setImagePreview(data.body.imgName)
-            setTags(data.body.tags || [])
           } else {
             setErrorMessage(data.errorMessage)
           }
@@ -101,10 +101,10 @@ export default function TripEditPage() {
   }, [id])
 
   const changed = useCallback(
-    (key: keyof Trip) =>
+    (key: keyof Festival) =>
       (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         setForm(obj => ({...obj, [key]: e.target.value}))
-        if (key === 'city_id') {
+        if (key === 'city_name') {
           const selectedCity = citys.find(city => city.id === e.target.value)
           if (selectedCity) {
             console.log(`ID: ${selectedCity.id}, City Name: ${selectedCity.city_name}`)
@@ -114,6 +114,16 @@ export default function TripEditPage() {
     [citys]
   )
 
+  const handlePublicChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    const isChecked = e.target.checked
+    setForm(prev => ({...prev, isPublic: isChecked}))
+  }, [])
+
+  const handleStatusChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    const isChecked = e.target.checked
+    setForm(prev => ({...prev, status: isChecked}))
+  }, [])
+
   const handleImageChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -122,8 +132,8 @@ export default function TripEditPage() {
         setImagePreview(reader.result as string)
       }
       reader.readAsDataURL(file)
-      setImageFile(file)
-      setForm(prev => ({...prev, imgURL: file.name}))
+      setImageFile(file) // 파일 객체를 상태에 저장
+      setForm(prev => ({...prev, imgName: file.name})) // 파일 이름을 상태에 저장
     }
   }, [])
 
@@ -133,21 +143,21 @@ export default function TripEditPage() {
     setForm(prev => ({...prev, imgName: ''}))
   }, [])
 
-  const editTrip = useCallback(
+  const editFestival = useCallback(
     async (
+      isPublic: boolean,
       city_name: string,
       si_gu_name: string,
-      place_name: string,
-      imgName: string,
+      status: boolean,
+      title: string,
+      festival_period: string,
+      festival_info: string,
+      content: string,
       address: string,
-      contact: string,
-      operating_hours: string,
       entrace_fee: string,
-      parking_status: string,
+      contact: string,
+      imgName: string,
       web_url: string,
-      short_info: string,
-      place_info: string,
-      tags: string[],
       adminId: string,
       author: string
     ) => {
@@ -158,7 +168,7 @@ export default function TripEditPage() {
           const formData = new FormData()
           formData.append('image', imageFile) // 파일 추가
 
-          const uploadResponse = await post('/trip/upload', formData)
+          const uploadResponse = await post('/festival/upload', formData)
           const uploadData = await uploadResponse.json()
           console.log(uploadData)
 
@@ -170,93 +180,80 @@ export default function TripEditPage() {
           }
         }
 
-        const response = await post(`/trip/edit/${id}`, {
-          city_name,
+        const response = await post(`/festival/edit/${id}`, {
+          isPublic,
+          city_name: city_name,
           si_gu_name,
-          place_name,
-          imgName: uploadedImageURL,
+          status,
+          title,
+          festival_period,
+          festival_info,
+          content,
           address,
-          contact,
-          operating_hours,
           entrace_fee,
-          parking_status,
+          contact,
+          imgName: uploadedImageURL,
           web_url,
-          short_info,
-          place_info,
-          tags,
           adminId,
           author
         })
         const data = await response.json()
         if (data.ok) {
           alert('작성이 완료되었습니다.')
-          navigate('/trip/list')
+          navigate('/festival/list')
         } else {
-          setErrorMessage(data.errorMessage || '여행지 정보 수정에 실패했습니다.')
+          setErrorMessage(data.errorMessage || '축제 정보 수정에 실패했습니다.')
         }
       } catch (error) {
-        setErrorMessage('여행지 정보 수정 중 오류가 발생했습니다.')
+        setErrorMessage('축제 정보 수정 중 오류가 발생했습니다.')
       }
     },
-    [navigate, imageFile, id]
+    [navigate, imageFile]
   )
 
-  const updateTrip = useCallback(() => {
-    editTrip(
+  const updateFestival = useCallback(() => {
+    editFestival(
+      isPublic,
       city_name,
       si_gu_name,
-      place_name,
-      imgName,
+      status,
+      title,
+      festival_period,
+      festival_info,
+      content,
       address,
-      contact,
-      operating_hours,
       entrace_fee,
-      parking_status,
+      contact,
+      imgName,
       web_url,
-      short_info,
-      place_info,
-      tags,
       adminId,
       author
     )
   }, [
+    isPublic,
     city_name,
     si_gu_name,
-    place_name,
-    imgName,
+    status,
+    title,
+    festival_period,
+    content,
     address,
-    contact,
-    operating_hours,
     entrace_fee,
-    parking_status,
+    contact,
+    imgName,
     web_url,
-    short_info,
-    place_info,
-    tags,
     adminId,
     author,
-    editTrip
+    editFestival
   ])
 
   const handleSubmit = useCallback(
     (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault()
-      updateTrip()
+      updateFestival()
     },
-    [updateTrip]
+    [updateFestival]
   )
-
-  const handleKeyDown = (e: {key: string; preventDefault: () => void}) => {
-    if (e.key === 'Enter' && inputValue.trim()) {
-      e.preventDefault()
-      setTags([...tags, inputValue.trim()])
-      setInputValue('')
-    }
-  }
-
-  const removeTag = (tagIdx: number) => {
-    setTags(tags.filter((tag, idx) => idx != tagIdx))
-  }
 
   // 선택한 도시 ID에 따른 시/구 목록 필터링
   const filteredDistricts = districts.filter(district => district.city_name === city_name)
@@ -266,7 +263,7 @@ export default function TripEditPage() {
       <div className="bg-lightblue">
         <div className="p-3">
           <div>
-            <p className="text-xl font-bold">여행지 수정</p>
+            <p className="text-xl font-bold">축제 등록</p>
           </div>
         </div>
       </div>
@@ -274,7 +271,25 @@ export default function TripEditPage() {
         <div className="p-5">
           <form onSubmit={handleSubmit}>
             <div className="p-5 bg-white rounded-xl">
-              <div>
+              <div className="pt-5">
+                <label className="font-bold">공개여부</label>
+                <div className="flex items-center pt-2">
+                  <span className="mr-3 text-sm font-medium text-gray-600 ">비공개</span>
+                  <label className="relative flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      value=""
+                      className="sr-only peer"
+                      checked={isPublic}
+                      onChange={handlePublicChange}
+                    />
+                    <div className="w-9 h-5 bg-gray-200 hover:bg-gray-300 peer-focus:outline-0  rounded-full peer transition-all ease-in-out duration-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600 hover:peer-checked:bg-indigo-700 "></div>
+                  </label>
+                  <span className="ml-3 text-sm font-medium text-gray-600 ">공개</span>
+                </div>
+              </div>
+
+              <div className="pt-5">
                 <label className="block mb-2 text-sm font-bold text-gray-900 dark:text-white">
                   지역 선택
                 </label>
@@ -308,15 +323,37 @@ export default function TripEditPage() {
                 </select>
               </div>
 
+              <div className="pt-5">
+                <label className="text-sm font-bold">축제 상태</label>
+                <div className="flex items-center pt-2">
+                  <span className="mr-3 text-sm font-medium text-gray-600 ">
+                    축제 미진행중
+                  </span>
+                  <label className="relative flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      value=""
+                      className="sr-only peer"
+                      checked={status}
+                      onChange={handleStatusChange}
+                    />
+                    <div className="w-9 h-5 bg-gray-200 hover:bg-gray-300 peer-focus:outline-0  rounded-full peer transition-all ease-in-out duration-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600 hover:peer-checked:bg-indigo-700 "></div>
+                  </label>
+                  <span className="ml-3 text-sm font-medium text-gray-600 ">
+                    축제 진행중
+                  </span>
+                </div>
+              </div>
+
               <div className="pt-16">
-                <label className="text-sm font-bold">장소명</label>
+                <label className="text-sm font-bold">축제명</label>
                 <input
                   type="text"
-                  name="place_name"
+                  name="title"
                   className="w-full h-10 p-3 border rounded-md"
-                  placeholder="여행지 장소명을 입력하세요."
-                  value={place_name}
-                  onChange={changed('place_name')}
+                  placeholder="축제 장소명을 입력하세요."
+                  value={title}
+                  onChange={changed('title')}
                 />
               </div>
 
@@ -326,7 +363,7 @@ export default function TripEditPage() {
                   type="text"
                   name="address"
                   className="w-full h-10 p-3 border rounded-md"
-                  placeholder="여행지의 주소를 입력하세요."
+                  placeholder="축제의 주소를 입력하세요."
                   value={address}
                   onChange={changed('address')}
                 />
@@ -345,14 +382,14 @@ export default function TripEditPage() {
               </div>
 
               <div className="pt-5">
-                <label className="text-sm font-bold">이용시간</label>
+                <label className="text-sm font-bold">축제 기간</label>
                 <input
                   type="text"
-                  name="operating_hours"
+                  name="festival_period"
                   className="w-full h-10 p-3 border rounded-md"
-                  placeholder="이용 가능한 시간을 입력하세요."
-                  value={operating_hours}
-                  onChange={changed('operating_hours')}
+                  placeholder="축제 기간을 입력하세요."
+                  value={festival_period}
+                  onChange={changed('festival_period')}
                 />
               </div>
 
@@ -362,21 +399,9 @@ export default function TripEditPage() {
                   type="text"
                   name="entrace_fee"
                   className="w-full h-10 p-3 border rounded-md"
-                  placeholder="해당 여행지의 이용요금을 입력하세요."
+                  placeholder="해당 축제의 이용요금을 입력하세요."
                   value={entrace_fee}
                   onChange={changed('entrace_fee')}
-                />
-              </div>
-
-              <div className="pt-5">
-                <label className="text-sm font-bold">주차여부</label>
-                <input
-                  type="text"
-                  name="parking_status"
-                  className="w-full h-10 p-3 border rounded-md"
-                  placeholder="해당 여행지의 주차여부를 입력하세요."
-                  value={parking_status}
-                  onChange={changed('parking_status')}
                 />
               </div>
 
@@ -386,7 +411,7 @@ export default function TripEditPage() {
                   type="text"
                   name="web_url"
                   className="w-full h-10 p-3 border rounded-md"
-                  placeholder="해당 여행지의 웹사이트 URL을 입력하세요."
+                  placeholder="해당 축제의 웹사이트 URL을 입력하세요."
                   value={web_url}
                   onChange={changed('web_url')}
                 />
@@ -396,11 +421,11 @@ export default function TripEditPage() {
                 <label className="text-sm font-bold">한줄 설명</label>
                 <input
                   type="text"
-                  name="short_info"
+                  name="festival_info"
                   className="w-full h-10 p-3 border rounded-md"
-                  placeholder="해당 여행지에 대해 한줄로 설명을 작성하세요."
-                  value={short_info}
-                  onChange={changed('short_info')}
+                  placeholder="해당 축제에 대해 한줄로 설명을 작성하세요."
+                  value={festival_info}
+                  onChange={changed('festival_info')}
                 />
               </div>
 
@@ -409,38 +434,10 @@ export default function TripEditPage() {
                 <textarea
                   name="content"
                   className="w-full h-32 p-3 border rounded-md"
-                  placeholder="해당 여행지에 대한 상세정보를 입력하세요."
-                  value={place_info}
-                  onChange={changed('place_info')}
+                  placeholder="해당 축제에 대한 상세정보를 입력하세요."
+                  value={content}
+                  onChange={changed('content')}
                 />
-              </div>
-
-              <div className="pt-5">
-                <label className="text-sm font-bold">여행지 태그</label>
-                <div className="flex flex-wrap items-center gap-2 p-2 border rounded-md">
-                  {tags.map((tag, idx) => (
-                    <div
-                      className="flex items-center inline-block px-3 py-1 bg-gray-300 rounded-3xl"
-                      key={idx}>
-                      <span className="inline-flex mr-2 text-center">{tag}</span>
-                      <span
-                        className="inline-flex items-center justify-center w-4 h-4 font-bold text-center text-gray-900 bg-white rounded-full cursor-pointer text-md"
-                        onClick={() => removeTag(idx)}>
-                        &times;
-                      </span>
-                    </div>
-                  ))}
-                  {tags.length <= 5 && (
-                    <input
-                      type="text"
-                      value={inputValue} // inputValue를 value로 설정
-                      onChange={e => setInputValue(e.target.value)} // input 값이 변경될 때 inputValue 업데이트
-                      onKeyDown={handleKeyDown}
-                      className="flex-grow text-sm text-gray-900 border-none bg-gray-50 focus:outline-none"
-                      placeholder="태그를 입력 후 Enter를 누르세요"
-                    />
-                  )}
-                </div>
               </div>
 
               <div className="flex flex-col pt-5">

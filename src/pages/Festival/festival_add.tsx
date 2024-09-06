@@ -5,13 +5,16 @@ import {post, get} from '../../server'
 import {City, District, Festival} from '../../data/types'
 
 const initialFormState: Festival = {
+  _id: '',
   id: '',
+  isPublic: true,
   city_id: '',
   city_name: '',
   si_gu_name: '',
-  status: '',
+  status: true,
   title: '',
   festival_period: '',
+  festival_info: '',
   content: '',
   address: '',
   entrace_fee: '',
@@ -25,11 +28,13 @@ export default function FestivalAddPage() {
   const [districts, setDistricts] = useState<District[]>([])
   const [
     {
+      isPublic,
       city_id,
       si_gu_name,
       status,
       title,
       festival_period,
+      festival_info,
       content,
       address,
       entrace_fee,
@@ -93,6 +98,16 @@ export default function FestivalAddPage() {
     [citys]
   )
 
+  const handlePublicChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    const isChecked = e.target.checked
+    setForm(prev => ({...prev, isPublic: isChecked}))
+  }, [])
+
+  const handleStatusChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    const isChecked = e.target.checked
+    setForm(prev => ({...prev, status: isChecked}))
+  }, [])
+
   const handleImageChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -114,11 +129,13 @@ export default function FestivalAddPage() {
 
   const addFestival = useCallback(
     async (
+      isPublic: boolean,
       city_id: string,
       si_gu_name: string,
-      status: string,
+      status: boolean,
       title: string,
       festival_period: string,
+      festival_info: string,
       content: string,
       address: string,
       entrace_fee: string,
@@ -148,11 +165,13 @@ export default function FestivalAddPage() {
         }
 
         const response = await post('/festival/add', {
+          isPublic,
           city_name: city_id,
           si_gu_name,
           status,
           title,
           festival_period,
+          festival_info,
           content,
           address,
           entrace_fee,
@@ -176,13 +195,15 @@ export default function FestivalAddPage() {
     [navigate, imageFile]
   )
 
-  const createArea = useCallback(() => {
+  const createFestival = useCallback(() => {
     addFestival(
+      isPublic,
       city_id,
       si_gu_name,
       status,
       title,
       festival_period,
+      festival_info,
       content,
       address,
       entrace_fee,
@@ -193,11 +214,13 @@ export default function FestivalAddPage() {
       author
     )
   }, [
+    isPublic,
     city_id,
     si_gu_name,
     status,
     title,
     festival_period,
+    festival_info,
     content,
     address,
     entrace_fee,
@@ -212,9 +235,9 @@ export default function FestivalAddPage() {
   const handleSubmit = useCallback(
     (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault()
-      createArea()
+      createFestival()
     },
-    [createArea]
+    [createFestival]
   )
 
   // 선택한 도시 ID에 따른 시/구 목록 필터링
@@ -233,7 +256,25 @@ export default function FestivalAddPage() {
         <div className="p-5">
           <form onSubmit={handleSubmit}>
             <div className="p-5 bg-white rounded-xl">
-              <div>
+              <div className="pt-5">
+                <label className="font-bold">공개여부</label>
+                <div className="flex items-center pt-2">
+                  <span className="mr-3 text-sm font-medium text-gray-600 ">비공개</span>
+                  <label className="relative flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      value=""
+                      className="sr-only peer"
+                      checked={isPublic}
+                      onChange={handlePublicChange}
+                    />
+                    <div className="w-9 h-5 bg-gray-200 hover:bg-gray-300 peer-focus:outline-0  rounded-full peer transition-all ease-in-out duration-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600 hover:peer-checked:bg-indigo-700 "></div>
+                  </label>
+                  <span className="ml-3 text-sm font-medium text-gray-600 ">공개</span>
+                </div>
+              </div>
+
+              <div className="pt-5">
                 <label className="block mb-2 text-sm font-bold text-gray-900 dark:text-white">
                   지역 선택
                 </label>
@@ -269,14 +310,24 @@ export default function FestivalAddPage() {
 
               <div className="pt-5">
                 <label className="text-sm font-bold">축제 상태</label>
-                <input
-                  type="text"
-                  name="status"
-                  className="w-full h-10 p-3 border rounded-md"
-                  placeholder="해당 축제의 진행 상태를 입력하세요."
-                  value={status}
-                  onChange={changed('status')}
-                />
+                <div className="flex items-center pt-2">
+                  <span className="mr-3 text-sm font-medium text-gray-600 ">
+                    축제 미진행중
+                  </span>
+                  <label className="relative flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      value=""
+                      className="sr-only peer"
+                      checked={status}
+                      onChange={handleStatusChange}
+                    />
+                    <div className="w-9 h-5 bg-gray-200 hover:bg-gray-300 peer-focus:outline-0  rounded-full peer transition-all ease-in-out duration-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600 hover:peer-checked:bg-indigo-700 "></div>
+                  </label>
+                  <span className="ml-3 text-sm font-medium text-gray-600 ">
+                    축제 진행중
+                  </span>
+                </div>
               </div>
 
               <div className="pt-16">
@@ -351,17 +402,28 @@ export default function FestivalAddPage() {
                 />
               </div>
 
-              {/* <div className="pt-16">
+              <div className="pt-16">
                 <label className="text-sm font-bold">한줄 설명</label>
                 <input
                   type="text"
-                  name="short_info"
+                  name="festival_info"
                   className="w-full h-10 p-3 border rounded-md"
                   placeholder="해당 축제에 대해 한줄로 설명을 작성하세요."
-                  value={short_info}
-                  onChange={changed('short_info')}
+                  value={festival_info}
+                  onChange={changed('festival_info')}
                 />
-              </div> */}
+              </div>
+
+              <div className="pt-5">
+                <label className="text-sm font-bold">상세정보</label>
+                <textarea
+                  name="content"
+                  className="w-full h-32 p-3 border rounded-md"
+                  placeholder="해당 축제에 대한 상세정보를 입력하세요."
+                  value={content}
+                  onChange={changed('content')}
+                />
+              </div>
 
               <div className="flex flex-col pt-5">
                 <label className="font-bold">이미지 추가</label>

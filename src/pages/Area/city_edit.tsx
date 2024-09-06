@@ -1,9 +1,11 @@
 import {useEffect, useState, useCallback, ChangeEvent} from 'react'
 import {useNavigate, useParams} from 'react-router-dom'
+
 import {get, post} from '../../server'
 import {City} from '../../data/types'
 
 const initialFormState: City = {
+  _id: '',
   id: '',
   city_name: '',
   short_name: '',

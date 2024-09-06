@@ -1,15 +1,20 @@
 import {useState, useEffect} from 'react'
-import {MdOutlineEditNote} from 'react-icons/md'
 import {useNavigate} from 'react-router-dom'
+import {MdOutlineEditNote, MdDeleteOutline} from 'react-icons/md'
 
-import {get} from '../../server'
+import {del, get} from '../../server'
 import {SI_GU} from '../../data/types'
 
 export default function Si_Gu_ListPage() {
-  const [citys, setCitys] = useState<SI_GU[]>([])
+  const [siGus, setSiGus] = useState<SI_GU[]>([])
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [currentPage, setCurrentPage] = useState<number>(1)
   const perPage = 10
+
+  const indexOfLastItem = currentPage * perPage
+  const indexOfFirstItem = indexOfLastItem - perPage
+  const currentItems = siGus.slice(indexOfFirstItem, indexOfLastItem)
+  const totalPages = Math.ceil(siGus.length / perPage)
 
   const navigate = useNavigate()
 
@@ -18,7 +23,7 @@ export default function Si_Gu_ListPage() {
       .then(res => res.json())
       .then(data => {
         if (data.ok) {
-          setCitys(data.body)
+          setSiGus(data.body)
         } else {
           setErrorMessage(data.errorMesage)
         }
@@ -35,14 +40,30 @@ export default function Si_Gu_ListPage() {
     }
   }, [errorMessage])
 
+  const handleDelete = async (id: string) => {
+    const isConfirmed = window.confirm('해당 게시물을 삭제하시겠습니까?')
+    if (isConfirmed) {
+      try {
+        const response = await del(`/area/district/delete/${id}`)
+        const data = await response.json()
+
+        if (data.ok) {
+          alert('게시물이 성공적으로 삭제되었습니다.')
+          setSiGus(prevSiGus => prevSiGus.filter(district => district._id !== id))
+        } else {
+          alert(`삭제 실패: ${data.errorMessage}`)
+        }
+      } catch (error) {
+        if (error instanceof Error) {
+          alert(`에러 발생: ${error.message}`)
+        }
+      }
+    }
+  }
+
   const handlePageChange = (pageNumber: number) => {
     setCurrentPage(pageNumber)
   }
-
-  const indexOfLastItem = currentPage * perPage
-  const indexOfFirstItem = indexOfLastItem - perPage
-  const currentItems = citys.slice(indexOfFirstItem, indexOfLastItem)
-  const totalPages = Math.ceil(citys.length / perPage)
 
   const moveAddPage = () => {
     navigate('/area/district/add')
@@ -91,7 +112,9 @@ export default function Si_Gu_ListPage() {
                     <th scope="col" className="px-6 py-3">
                       AUTHOR
                     </th>
-                    <th scope="col" className="px-6 py-3"></th>
+                    <th scope="col" className="px-6 py-3">
+                      EDIT / REMOVE
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -104,11 +127,20 @@ export default function Si_Gu_ListPage() {
                       <td className="px-6 py-4">{district.si_gu_name}</td>
                       <td className="px-6 py-4">{district.author}</td>
                       <td className="px-6 py-4">
-                        <button
-                          onClick={() => navigate(`/area/district/edit/${district._id}`)}
-                          className="font-medium text-blue-600 dark:text-blue-500 hover:underline">
-                          <MdOutlineEditNote className="text-2xl" />
-                        </button>
+                        <div>
+                          <button
+                            onClick={() =>
+                              navigate(`/area/district/edit/${district._id}`)
+                            }
+                            className="font-medium text-blue-600 dark:text-blue-500 hover:underline">
+                            <MdOutlineEditNote className="text-2xl" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(district._id)}
+                            className="font-medium text-green-600 dark:text-green-500 hover:underline">
+                            <MdDeleteOutline className="text-2xl" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -119,11 +151,11 @@ export default function Si_Gu_ListPage() {
                 aria-label="Table navigation">
                 <span className="block w-full mb-4 text-sm font-normal text-gray-500 dark:text-gray-400 md:mb-0 md:inline md:w-auto">
                   <span className="font-semibold text-gray-900 dark:text-white">
-                    {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, citys.length)}
+                    {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, siGus.length)}
                   </span>{' '}
                   of{' '}
                   <span className="font-semibold text-gray-900 dark:text-white">
-                    {citys.length}
+                    {siGus.length}
                   </span>
                 </span>
                 <ul className="inline-flex h-8 pr-1 -space-x-px text-sm rtl:space-x-reverse">

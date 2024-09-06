@@ -9,7 +9,6 @@ import Logout from './Auth/Logout'
 import NoMatch from './NoMatch'
 import Home from '../pages/Home/home'
 import ThemaPage from '../pages/Thema/thema'
-import TripPage from '../Trip/trip'
 
 import Layout from './Layout'
 import AddPage from '../pages/Thema/add'
@@ -20,14 +19,16 @@ import Si_Gu_AddPage from '../pages/Area/si_gu_add'
 import Si_Gu_ListPage from '../pages/Area/si_gu_list'
 import TripAddPage from '../pages/Trip/trip_add'
 import TripListPage from '../pages/Trip/trip_list'
-import RestaurantAddPage from '../pages/Restaurant/add'
+import RestaurantAddPage from '../pages/Restaurant/restaurant_add'
 import FestivalAddPage from '../pages/Festival/festival_add'
 import FestivalListPage from '../pages/Festival/festival_list'
 import CityEditPage from '../pages/Area/city_edit'
 import Si_Gu_EditPage from '../pages/Area/si_gu_edit'
-import RestaurantListPage from '../pages/Restaurant/list'
+import RestaurantListPage from '../pages/Restaurant/restaurant_list'
 import EditPage from '../pages/Thema/edit'
 import TripEditPage from '../pages/Trip/trip_edit'
+import FestivalEditPage from '../pages/Festival/festival_edit'
+import RestaurantEditPage from '../pages/Restaurant/restaurant_edit'
 
 export default function RoutesSetup() {
   const {auth, id} = useAdmin() // auth 상태 가져오기
@@ -67,9 +68,11 @@ export default function RoutesSetup() {
 
             <Route path="/festival/add" element={<FestivalAddPage />} />
             <Route path="/festival/list" element={<FestivalListPage />} />
+            <Route path="/festival/edit/:id" element={<FestivalEditPage />} />
 
             <Route path="/restaurant/add" element={<RestaurantAddPage />} />
             <Route path="/restaurant/list" element={<RestaurantListPage />} />
+            <Route path="/restaurant/edit/:id" element={<RestaurantEditPage />} />
             <Route
               path="logout"
               element={

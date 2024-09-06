@@ -1,5 +1,4 @@
-import type {ChangeEvent} from 'react'
-import {useState, useCallback, useEffect} from 'react'
+import {useState, useCallback, useEffect, ChangeEvent, KeyboardEvent} from 'react'
 import {useNavigate} from 'react-router-dom'
 import {post, get} from '../../server'
 
@@ -48,6 +47,9 @@ const initialFormState: ThemaFormType = {
 export default function TripAddPage() {
   const [citys, setCitys] = useState<City[]>([])
   const [districts, setDistricts] = useState<District[]>([])
+  const [tags, setTags] = useState<string[]>([])
+  const [inputValue, setInputValue] = useState('')
+
   const [
     {
       city_id,
@@ -152,6 +154,7 @@ export default function TripAddPage() {
       web_url: string,
       short_info: string,
       place_info: string,
+      tags: string[],
       adminId: string,
       author: string
     ) => {
@@ -187,6 +190,7 @@ export default function TripAddPage() {
           web_url,
           short_info,
           place_info,
+          tags,
           adminId,
           author
         })
@@ -218,6 +222,7 @@ export default function TripAddPage() {
       web_url,
       short_info,
       place_info,
+      tags,
       adminId,
       author
     )
@@ -234,6 +239,7 @@ export default function TripAddPage() {
     web_url,
     short_info,
     place_info,
+    tags,
     adminId,
     author,
     addTrip
@@ -246,6 +252,18 @@ export default function TripAddPage() {
     },
     [createArea]
   )
+
+  const handleKeyDown = (e: {key: string; preventDefault: () => void}) => {
+    if (e.key === 'Enter' && inputValue.trim()) {
+      e.preventDefault()
+      setTags([...tags, inputValue.trim()])
+      setInputValue('')
+    }
+  }
+
+  const removeTag = (tagIdx: number) => {
+    setTags(tags.filter((tag, idx) => idx != tagIdx))
+  }
 
   // 선택한 도시 ID에 따른 시/구 목록 필터링
   const filteredDistricts = districts.filter(district => district.city_name === city_id)
@@ -402,6 +420,34 @@ export default function TripAddPage() {
                   value={place_info}
                   onChange={changed('place_info')}
                 />
+              </div>
+
+              <div className="pt-5">
+                <label className="text-sm font-bold">상세정보</label>
+                <div className="flex flex-wrap items-center gap-2 p-2 border rounded-md">
+                  {tags.map((tag, idx) => (
+                    <div
+                      className="flex items-center inline-block px-3 py-1 bg-gray-300 rounded-3xl"
+                      key={idx}>
+                      <span className="inline-flex mr-2 text-center">{tag}</span>
+                      <span
+                        className="inline-flex items-center justify-center w-4 h-4 font-bold text-center text-gray-900 bg-white rounded-full cursor-pointer text-md"
+                        onClick={() => removeTag(idx)}>
+                        &times;
+                      </span>
+                    </div>
+                  ))}
+                  {tags.length <= 5 && (
+                    <input
+                      type="text"
+                      value={inputValue} // inputValue를 value로 설정
+                      onChange={e => setInputValue(e.target.value)} // input 값이 변경될 때 inputValue 업데이트
+                      onKeyDown={handleKeyDown}
+                      className="flex-grow text-sm text-gray-900 border-none bg-gray-50 focus:outline-none"
+                      placeholder="태그를 입력 후 Enter를 누르세요"
+                    />
+                  )}
+                </div>
               </div>
 
               <div className="flex flex-col pt-5">

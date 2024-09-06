@@ -1,51 +1,47 @@
-import {useEffect, useState, useCallback, ChangeEvent, KeyboardEvent} from 'react'
+import type {ChangeEvent} from 'react'
+import {useState, useCallback, useEffect} from 'react'
 import {useNavigate, useParams} from 'react-router-dom'
-import {post, get} from '../../server'
-import {City, District, Trip} from '../../data/types'
+import {get, post} from '../../server'
+import {City, District, Restaurant} from '../../data/types'
 
-const initialFormState: Trip = {
+const initialFormState: Restaurant = {
   _id: '',
   city_id: '',
   city_name: '',
   si_gu_name: '',
-  place_name: '',
-  imgName: '',
+  store_name: '',
   address: '',
   contact: '',
   operating_hours: '',
-  entrace_fee: '',
+  main_menu: '',
   parking_status: '',
-  web_url: '',
+  imgName: '',
   short_info: '',
-  place_info: ''
+  store_info: ''
 }
 
-export default function TripEditPage() {
+export default function RestaurantEditPage() {
   const [citys, setCitys] = useState<City[]>([])
   const [districts, setDistricts] = useState<District[]>([])
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [imageFile, setImageFile] = useState<File | null>(null)
   const [
     {
       city_name,
       si_gu_name,
-      place_name,
-      imgName,
+      store_name,
       address,
       contact,
       operating_hours,
-      entrace_fee,
+      main_menu,
       parking_status,
-      web_url,
+      imgName,
       short_info,
-      place_info
+      store_info
     },
     setForm
-  ] = useState<Trip>(initialFormState)
+  ] = useState<Restaurant>(initialFormState)
   const [errorMessage, setErrorMessage] = useState<string>('')
-  const [tags, setTags] = useState<string[]>([])
-  const [inputValue, setInputValue] = useState('')
-
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [imageFile, setImageFile] = useState<File | null>(null) // 파일 객체 상태 추가
 
   const storedData = window.localStorage.getItem('admin')
   const parsedData = storedData ? JSON.parse(storedData) : {}
@@ -83,13 +79,12 @@ export default function TripEditPage() {
       })
 
     if (id) {
-      get(`/trip/info/${id}`)
+      get(`/restaurant/info/${id}`)
         .then(res => res.json())
         .then(data => {
           if (data.ok) {
             setForm(data.body)
             setImagePreview(data.body.imgName)
-            setTags(data.body.tags || [])
           } else {
             setErrorMessage(data.errorMessage)
           }
@@ -101,10 +96,10 @@ export default function TripEditPage() {
   }, [id])
 
   const changed = useCallback(
-    (key: keyof Trip) =>
+    (key: keyof Restaurant) =>
       (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         setForm(obj => ({...obj, [key]: e.target.value}))
-        if (key === 'city_id') {
+        if (key === 'city_name') {
           const selectedCity = citys.find(city => city.id === e.target.value)
           if (selectedCity) {
             console.log(`ID: ${selectedCity.id}, City Name: ${selectedCity.city_name}`)
@@ -123,31 +118,29 @@ export default function TripEditPage() {
       }
       reader.readAsDataURL(file)
       setImageFile(file)
-      setForm(prev => ({...prev, imgURL: file.name}))
+      setForm(prev => ({...prev, imgName: file.name}))
     }
   }, [])
 
   const handleRemoveImage = useCallback(() => {
     setImagePreview(null)
-    setImageFile(null) // 파일 객체 상태 초기화
+    setImageFile(null)
     setForm(prev => ({...prev, imgName: ''}))
   }, [])
 
-  const editTrip = useCallback(
+  const editRestaurant = useCallback(
     async (
       city_name: string,
       si_gu_name: string,
-      place_name: string,
-      imgName: string,
+      store_name: string,
       address: string,
       contact: string,
       operating_hours: string,
-      entrace_fee: string,
+      main_menu: string,
       parking_status: string,
-      web_url: string,
+      imgName: string,
       short_info: string,
-      place_info: string,
-      tags: string[],
+      store_info: string,
       adminId: string,
       author: string
     ) => {
@@ -156,9 +149,9 @@ export default function TripEditPage() {
 
         if (imageFile) {
           const formData = new FormData()
-          formData.append('image', imageFile) // 파일 추가
+          formData.append('image', imageFile)
 
-          const uploadResponse = await post('/trip/upload', formData)
+          const uploadResponse = await post('/restaurant/upload', formData)
           const uploadData = await uploadResponse.json()
           console.log(uploadData)
 
@@ -170,103 +163,85 @@ export default function TripEditPage() {
           }
         }
 
-        const response = await post(`/trip/edit/${id}`, {
-          city_name,
+        const response = await post(`/restaurant/edit/${id}`, {
+          city_name: city_name,
           si_gu_name,
-          place_name,
-          imgName: uploadedImageURL,
+          store_name,
           address,
           contact,
           operating_hours,
-          entrace_fee,
+          main_menu,
           parking_status,
-          web_url,
+          imgName: uploadedImageURL,
           short_info,
-          place_info,
-          tags,
+          store_info,
           adminId,
           author
         })
         const data = await response.json()
         if (data.ok) {
           alert('작성이 완료되었습니다.')
-          navigate('/trip/list')
+          navigate('/restaurant/list')
         } else {
-          setErrorMessage(data.errorMessage || '여행지 정보 수정에 실패했습니다.')
+          setErrorMessage(data.errorMessage || '맛집 등록에 실패했습니다.')
         }
       } catch (error) {
-        setErrorMessage('여행지 정보 수정 중 오류가 발생했습니다.')
+        setErrorMessage('맛집 등록 중 오류가 발생했습니다.')
       }
     },
-    [navigate, imageFile, id]
+    [navigate, imageFile]
   )
 
-  const updateTrip = useCallback(() => {
-    editTrip(
+  const createRestaurant = useCallback(() => {
+    editRestaurant(
       city_name,
       si_gu_name,
-      place_name,
-      imgName,
+      store_name,
       address,
       contact,
       operating_hours,
-      entrace_fee,
+      main_menu,
       parking_status,
-      web_url,
+      imgName,
       short_info,
-      place_info,
-      tags,
+      store_info,
       adminId,
       author
     )
   }, [
     city_name,
     si_gu_name,
-    place_name,
-    imgName,
+    store_name,
     address,
     contact,
     operating_hours,
-    entrace_fee,
+    main_menu,
     parking_status,
-    web_url,
+    imgName,
     short_info,
-    place_info,
-    tags,
+    store_info,
     adminId,
     author,
-    editTrip
+    editRestaurant
   ])
 
   const handleSubmit = useCallback(
     (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault()
-      updateTrip()
+      // Additional validation if needed
+      createRestaurant()
     },
-    [updateTrip]
+    [createRestaurant]
   )
 
-  const handleKeyDown = (e: {key: string; preventDefault: () => void}) => {
-    if (e.key === 'Enter' && inputValue.trim()) {
-      e.preventDefault()
-      setTags([...tags, inputValue.trim()])
-      setInputValue('')
-    }
-  }
-
-  const removeTag = (tagIdx: number) => {
-    setTags(tags.filter((tag, idx) => idx != tagIdx))
-  }
-
-  // 선택한 도시 ID에 따른 시/구 목록 필터링
   const filteredDistricts = districts.filter(district => district.city_name === city_name)
 
   return (
     <div>
-      <div className="bg-lightblue">
+      <div className="bg-pink-200">
         <div className="p-3">
           <div>
-            <p className="text-xl font-bold">여행지 수정</p>
+            <p className="text-xl font-bold">맛집 등록</p>
           </div>
         </div>
       </div>
@@ -309,14 +284,14 @@ export default function TripEditPage() {
               </div>
 
               <div className="pt-16">
-                <label className="text-sm font-bold">장소명</label>
+                <label className="text-sm font-bold">가게명</label>
                 <input
                   type="text"
-                  name="place_name"
+                  name="store_name"
                   className="w-full h-10 p-3 border rounded-md"
-                  placeholder="여행지 장소명을 입력하세요."
-                  value={place_name}
-                  onChange={changed('place_name')}
+                  placeholder="가게명을 입력하세요."
+                  value={store_name}
+                  onChange={changed('store_name')}
                 />
               </div>
 
@@ -326,7 +301,7 @@ export default function TripEditPage() {
                   type="text"
                   name="address"
                   className="w-full h-10 p-3 border rounded-md"
-                  placeholder="여행지의 주소를 입력하세요."
+                  placeholder="맛집의 주소를 입력하세요."
                   value={address}
                   onChange={changed('address')}
                 />
@@ -357,14 +332,14 @@ export default function TripEditPage() {
               </div>
 
               <div className="pt-5">
-                <label className="text-sm font-bold">이용요금</label>
+                <label className="text-sm font-bold">대표메뉴</label>
                 <input
                   type="text"
-                  name="entrace_fee"
+                  name="main_menu"
                   className="w-full h-10 p-3 border rounded-md"
-                  placeholder="해당 여행지의 이용요금을 입력하세요."
-                  value={entrace_fee}
-                  onChange={changed('entrace_fee')}
+                  placeholder="대표메뉴를 입력하세요."
+                  value={main_menu}
+                  onChange={changed('main_menu')}
                 />
               </div>
 
@@ -374,21 +349,9 @@ export default function TripEditPage() {
                   type="text"
                   name="parking_status"
                   className="w-full h-10 p-3 border rounded-md"
-                  placeholder="해당 여행지의 주차여부를 입력하세요."
+                  placeholder="주차여부를 입력하세요."
                   value={parking_status}
                   onChange={changed('parking_status')}
-                />
-              </div>
-
-              <div className="pt-5">
-                <label className="text-sm font-bold">웹사이트 URL</label>
-                <input
-                  type="text"
-                  name="web_url"
-                  className="w-full h-10 p-3 border rounded-md"
-                  placeholder="해당 여행지의 웹사이트 URL을 입력하세요."
-                  value={web_url}
-                  onChange={changed('web_url')}
                 />
               </div>
 
@@ -398,7 +361,7 @@ export default function TripEditPage() {
                   type="text"
                   name="short_info"
                   className="w-full h-10 p-3 border rounded-md"
-                  placeholder="해당 여행지에 대해 한줄로 설명을 작성하세요."
+                  placeholder="해당 맛집에 대해 한줄로 설명을 작성하세요."
                   value={short_info}
                   onChange={changed('short_info')}
                 />
@@ -409,42 +372,14 @@ export default function TripEditPage() {
                 <textarea
                   name="content"
                   className="w-full h-32 p-3 border rounded-md"
-                  placeholder="해당 여행지에 대한 상세정보를 입력하세요."
-                  value={place_info}
-                  onChange={changed('place_info')}
+                  placeholder="해당 맛집에 대한 상세정보를 입력하세요."
+                  value={store_info}
+                  onChange={changed('store_info')}
                 />
               </div>
 
-              <div className="pt-5">
-                <label className="text-sm font-bold">여행지 태그</label>
-                <div className="flex flex-wrap items-center gap-2 p-2 border rounded-md">
-                  {tags.map((tag, idx) => (
-                    <div
-                      className="flex items-center inline-block px-3 py-1 bg-gray-300 rounded-3xl"
-                      key={idx}>
-                      <span className="inline-flex mr-2 text-center">{tag}</span>
-                      <span
-                        className="inline-flex items-center justify-center w-4 h-4 font-bold text-center text-gray-900 bg-white rounded-full cursor-pointer text-md"
-                        onClick={() => removeTag(idx)}>
-                        &times;
-                      </span>
-                    </div>
-                  ))}
-                  {tags.length <= 5 && (
-                    <input
-                      type="text"
-                      value={inputValue} // inputValue를 value로 설정
-                      onChange={e => setInputValue(e.target.value)} // input 값이 변경될 때 inputValue 업데이트
-                      onKeyDown={handleKeyDown}
-                      className="flex-grow text-sm text-gray-900 border-none bg-gray-50 focus:outline-none"
-                      placeholder="태그를 입력 후 Enter를 누르세요"
-                    />
-                  )}
-                </div>
-              </div>
-
               <div className="flex flex-col pt-5">
-                <label className="font-bold">이미지 추가</label>
+                <label className="text-sm font-bold">이미지 추가</label>
 
                 <div className="flex items-center justify-center w-full pt-5">
                   {imagePreview ? (
@@ -455,7 +390,6 @@ export default function TripEditPage() {
                         className="object-cover w-full h-64 rounded-lg"
                       />
                       <button
-                        type="button"
                         onClick={handleRemoveImage}
                         className="absolute p-1 text-white bg-gray-600 rounded-full top-2 right-2">
                         x
@@ -477,7 +411,7 @@ export default function TripEditPage() {
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth="2"
-                            d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
+                            d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
                           />
                         </svg>
                         <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
@@ -490,7 +424,7 @@ export default function TripEditPage() {
                       </div>
                       <input
                         id="dropzone-file"
-                        name="trip"
+                        name="food-img"
                         type="file"
                         className="hidden"
                         onChange={handleImageChange}

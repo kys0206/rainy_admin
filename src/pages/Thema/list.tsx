@@ -1,6 +1,6 @@
 import {useState, useEffect} from 'react'
-import {MdOutlineEditNote, MdDeleteOutline} from 'react-icons/md'
 import {useNavigate} from 'react-router-dom'
+import {MdOutlineEditNote, MdDeleteOutline} from 'react-icons/md'
 
 import {del, get, post} from '../../server'
 import {Thema} from '../../data/types'

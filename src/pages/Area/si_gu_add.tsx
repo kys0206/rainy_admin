@@ -74,7 +74,7 @@ export default function Si_Gu_AddPage() {
         const data = await response.json()
         if (data.ok) {
           alert('작성이 완료되었습니다.')
-          navigate('/area/city/list')
+          navigate('/area/district/list')
         } else {
           setErrorMessage(data.errorMessage || '시/구 등록에 실패했습니다.')
         }
