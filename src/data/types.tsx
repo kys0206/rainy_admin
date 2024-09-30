@@ -1,3 +1,13 @@
+export type Slide = {
+  _id: string
+  id: string
+  isPublic: boolean
+  title: string
+  content: string
+  imgName: string
+  author?: string
+}
+
 export type City = {
   _id: string
   id: string

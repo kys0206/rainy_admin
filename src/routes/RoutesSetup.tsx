@@ -29,6 +29,9 @@ import EditPage from '../pages/Thema/edit'
 import TripEditPage from '../pages/Trip/trip_edit'
 import FestivalEditPage from '../pages/Festival/festival_edit'
 import RestaurantEditPage from '../pages/Restaurant/restaurant_edit'
+import SlideAddPage from '../pages/Slide/slide_add'
+import SlideListPage from '../pages/Slide/slide_list'
+import SlideEditPage from '../pages/Slide/slide_edit'
 
 export default function RoutesSetup() {
   const {auth, id} = useAdmin() // auth 상태 가져오기
@@ -53,6 +56,10 @@ export default function RoutesSetup() {
             <Route path="/thema/list" element={<ThemaPage />} />
             <Route path="/thema/add" element={<AddPage />} />
             <Route path="/thema/edit/:id" element={<EditPage />} />
+
+            <Route path="/slide/add" element={<SlideAddPage />} />
+            <Route path="/slide/list" element={<SlideListPage />} />
+            <Route path="/slide/edit/:id" element={<SlideEditPage />} />
 
             <Route path="/area/city/add" element={<CityAddPage />} />
             <Route path="/area/city/list" element={<CityListPage />} />

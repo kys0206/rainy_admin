@@ -5,6 +5,7 @@ import {Link as RRLink, NavLink} from 'react-router-dom'
 import {PiMapPinAreaDuotone, PiAirplaneInFlightDuotone} from 'react-icons/pi'
 import {RiRestaurantFill} from 'react-icons/ri'
 import {MdCardTravel, MdOutlineFestival} from 'react-icons/md'
+import {TfiLayoutSliderAlt} from 'react-icons/tfi'
 
 import {Link} from '../../components'
 
@@ -318,6 +319,53 @@ export default function NavigationBar() {
                       `block ${isActive ? 'font-bold text-blue-700' : ''}`
                     }>
                     맛집 등록
+                  </NavLink>
+                </li>
+              </ul>
+            </article>
+          </details>
+        </div>
+
+        <div className="pt-4">
+          <details className="group">
+            <summary className="flex items-center justify-between gap-2 p-2 font-medium marker:content-none hover:cursor-pointer">
+              <span>
+                <TfiLayoutSliderAlt />
+              </span>
+              <span className="flex gap-2">
+                <span>메인 슬라이드</span>
+              </span>
+              <svg
+                className="w-5 h-5 text-gray-500 transition group-open:rotate-90"
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                fill="currentColor"
+                viewBox="0 0 16 16">
+                <path
+                  fill-rule="evenodd"
+                  d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"></path>
+              </svg>
+            </summary>
+
+            <article className="px-4 pb-4">
+              <ul className="flex flex-col gap-1 pl-2">
+                <li>
+                  <NavLink
+                    to="/slide/list"
+                    className={({isActive}) =>
+                      `block ${isActive ? 'font-bold text-blue-700' : ''}`
+                    }>
+                    슬라이드 목록
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink
+                    to="/slide/add"
+                    className={({isActive}) =>
+                      `block ${isActive ? 'font-bold text-blue-700' : ''}`
+                    }>
+                    슬라이드 등록
                   </NavLink>
                 </li>
               </ul>
